@@ -6,16 +6,21 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from django.contrib.auth.models import User
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from app.models import Post, Comment
-from app.serializers import PostListSerializer, CommentListSerializer, CommentValidateSerializer, PostValidateSerializer, UserLoginValidateSerializer, UserRegisterValidateSerializer
+from app.serializers import PostListSerializer, CommentListSerializer, CommentValidateSerializer, \
+    PostValidateSerializer, UserLoginValidateSerializer, UserRegisterValidateSerializer
+from .permissions import IsSuperUser
 
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def post_list_views(request):
     if request.method == 'GET':
         posts = Post.objects.all()
-        data = PostListSerializer(posts, many=True).data
+        data = PostListSerializer(posts, many=True,
+                                  context={'text': 'list'}).data
         return Response(data={'list': data})
     elif request.method == 'POST':
         serializer = PostValidateSerializer(data=request.data)
@@ -45,7 +50,7 @@ def post_item_view(request, id):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes(['IsAuthenticated'])
+@permission_classes([IsAuthenticated])
 def comment_list_views(request):
     if request.method == 'GET':
         comment = Comment.objects.all()
@@ -94,9 +99,9 @@ def login(request):
         if user:
             try:
                 token = Token.objects.get(user=user)
-                print("GET TOKEN")
+                # print("GET TOKEN")
             except:
-                print("CREATE TOKEN")
+                # print("CREATE TOKEN")
                 token = Token.objects.create(user=user)
             return Response(data={'key': token.key})
         else:
